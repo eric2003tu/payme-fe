@@ -22,8 +22,13 @@ export class AppClient {
     }
 
     const session = this.getSession();
-    if (session?.accessToken) {
-      headers.set("Authorization", `Bearer ${session.accessToken}`);
+    let token = session?.accessToken;
+    if (!token && typeof window !== "undefined") {
+      // Fallback to localStorage token keys if session is unavailable
+      token = localStorage.getItem("pnm.accessToken") || localStorage.getItem("pmn.accessToken") || undefined;
+    }
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
     }
 
     const res = await fetch(url, { ...init, headers, credentials: "include" });

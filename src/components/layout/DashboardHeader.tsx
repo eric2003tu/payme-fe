@@ -2,9 +2,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronRight, Search, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { notificationsClient } from "@/lib/notificationsClient";
 
 function segmentLabel(segment: string) {
   const map: Record<string, string> = {
@@ -29,6 +31,23 @@ function segmentLabel(segment: string) {
 export function DashboardHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: any;
+    const fetchUnread = async () => {
+      try {
+        const list = await notificationsClient.unread();
+        if (mounted) setUnreadCount(list?.length || 0);
+      } catch {
+        // ignore
+      }
+    };
+    fetchUnread();
+    timer = setInterval(fetchUnread, 60000);
+    return () => { mounted = false; if (timer) clearInterval(timer); };
+  }, []);
 
   const parts = (pathname || "/dashboard")
     .split("/")
@@ -69,9 +88,14 @@ export function DashboardHeader() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon">
+          <Button asChild variant="ghost" size="icon" className="relative">
             <Link href="/dashboard/notifications" aria-label="Notifications">
               <Bell className="h-5 w-5 text-slate-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           </Button>
           <div className="ml-1 flex items-center gap-2 rounded-full border bg-white px-3 py-1.5">

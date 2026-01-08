@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { loanOfferClient } from "@/lib/loanOfferClient";
+import { toast } from "sonner";
 
 type CreateLoanOfferDto = {
   loanRequestId: string;
@@ -17,8 +20,10 @@ type CreateLoanOfferDto = {
   message?: string;
 };
 
-export default function OfferLoanForRequestPage({ params }: { params: { id: string } }) {
-  const loanRequestId = params.id;
+export default function OfferLoanForRequestPage() {
+  const params = useParams();
+  const router = useRouter();
+  const loanRequestId = typeof params?.id === "string" ? (params.id as string) : "";
 
   const defaultValues = useMemo<Partial<CreateLoanOfferDto>>(
     () => ({ interestRate: 6.0, status: "PENDING", isCounterOffer: false }),
@@ -29,17 +34,31 @@ export default function OfferLoanForRequestPage({ params }: { params: { id: stri
     defaultValues: { ...defaultValues, loanRequestId },
   });
 
-  const onSubmit = (values: CreateLoanOfferDto) => {
+  const onSubmit = async (values: CreateLoanOfferDto) => {
     const payload: CreateLoanOfferDto = {
       loanRequestId,
       amount: Number(values.amount),
       interestRate: values.interestRate ?? 6.0,
-      status: values.status || "PENDING",
+      // Normalize status to allowed enum values; default to PENDING
+      status: (() => {
+        const s = (values.status ?? "PENDING").toUpperCase();
+        return s === "ACCEPTED" || s === "REJECTED" || s === "WITHDRAWN" ? s : "PENDING";
+      })(),
       isCounterOffer: !!values.isCounterOffer,
       message: values.message?.trim() || undefined,
     };
-    console.log("CreateLoanOfferDto", payload);
-    // TODO: POST to API endpoint when available
+    try {
+      // Cast payload to client input after normalization to satisfy TS union type
+      const created = await loanOfferClient.create(payload as any);
+      toast.success("Offer submitted");
+      router.push(`/dashboard/loan-requests/${encodeURIComponent(loanRequestId)}`);
+    } catch (err: any) {
+      if (err?.status === 400) {
+        toast.error("User documents not verified");
+      } else {
+        toast.error(err?.message || "Failed to submit offer");
+      }
+    }
   };
 
   return (

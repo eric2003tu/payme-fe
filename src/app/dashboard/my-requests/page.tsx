@@ -1,13 +1,15 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { loanRequestClient } from "@/lib/loanRequestClient";
+import { toast } from "sonner";
 
-type RequestStatus = "OPEN" | "PARTIAL" | "CLOSED";
+type RequestStatus = "OPEN" | "FUNDED" | "PARTIAL" | "CANCELLED" | "EXPIRED";
 
 type MyRequest = {
   id: string;
@@ -23,12 +25,8 @@ type MyRequest = {
   expiresAt?: string;
 };
 
-const SEED: MyRequest[] = [
-  { id: "RQ-101", loanNumber: "LR-2026-0101", amount: 5000, minAmount: 1200, funded: 3200, interestRate: 5.8, durationDays: 60, purpose: "Working capital", status: "OPEN", createdAt: "2026-01-03", expiresAt: "2026-01-20" },
-  { id: "RQ-102", loanNumber: "LR-2026-0102", amount: 2800, funded: 2800, interestRate: 6.1, durationDays: 45, purpose: "Inventory", status: "CLOSED", createdAt: "2026-01-01", expiresAt: "2026-01-10" },
-  { id: "RQ-103", loanNumber: "LR-2026-0103", amount: 4200, minAmount: 1000, funded: 1800, interestRate: 6.0, durationDays: 90, purpose: "Expansion", status: "PARTIAL", createdAt: "2026-01-05", expiresAt: "2026-01-25" },
-  { id: "RQ-104", loanNumber: "LR-2026-0104", amount: 1500, funded: 0, interestRate: 5.9, durationDays: 30, purpose: "Bridge", status: "OPEN", createdAt: "2026-01-07", expiresAt: "2026-01-21" },
-];
+// Remote data will be fetched from /loan-request/me
+const SEED: MyRequest[] = [];
 
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -38,10 +36,14 @@ function badgeClass(status: RequestStatus) {
   switch (status) {
     case "OPEN":
       return "text-blue bg-blue/10";
+    case "FUNDED":
+      return "text-emerald-600 bg-emerald-100";
     case "PARTIAL":
       return "text-amber-700 bg-amber-100";
-    case "CLOSED":
-      return "text-emerald-600 bg-emerald-100";
+    case "CANCELLED":
+      return "text-rose-600 bg-rose-100";
+    case "EXPIRED":
+      return "text-slate-700 bg-slate-100";
   }
 }
 
@@ -50,14 +52,60 @@ export default function MyRequestsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<RequestStatus | "all">("all");
   const [showNew, setShowNew] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Map backend statuses to local UI statuses
+  const mapStatus = (s: string): RequestStatus => {
+    const v = (s || "OPEN").toUpperCase();
+    if (v === "OPEN" || v === "FUNDED" || v === "PARTIAL" || v === "CANCELLED" || v === "EXPIRED") {
+      return v as RequestStatus;
+    }
+    return "OPEN";
+  };
+
+  const num = (x: any): number => {
+    if (x == null) return 0;
+    const n = typeof x === "string" ? Number(x) : x;
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // Fetch my loan requests
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await loanRequestClient.mine();
+        const mapped: MyRequest[] = (data || []).map((d: any) => ({
+          id: d.id,
+          loanNumber: d.loanNumber || d.id,
+          amount: num(d.amount),
+          minAmount: d.minAmount != null ? num(d.minAmount) : undefined,
+          funded: num(d.amountFunded),
+          interestRate: num(d.interestRate),
+          durationDays: num(d.durationDays),
+          purpose: d.purpose || undefined,
+          status: mapStatus(d.status),
+          createdAt: d.createdAt || new Date().toISOString(),
+          expiresAt: d.expiresAt || d.fundingDeadline || undefined,
+        }));
+        setItems(mapped);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to load your requests");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const counts = useMemo(() => {
     const total = items.length;
     const open = items.filter((r) => r.status === "OPEN").length;
+    const funded = items.filter((r) => r.status === "FUNDED").length;
     const partial = items.filter((r) => r.status === "PARTIAL").length;
-    const closed = items.filter((r) => r.status === "CLOSED").length;
+    const cancelled = items.filter((r) => r.status === "CANCELLED").length;
+    const expired = items.filter((r) => r.status === "EXPIRED").length;
     const raised = items.reduce((a, r) => a + r.funded, 0);
-    return { total, open, partial, closed, raised };
+    return { total, open, funded, partial, cancelled, expired, raised };
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -78,11 +126,13 @@ export default function MyRequestsPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-7">
         <StatCard title="Total" value={counts.total} accent="blue" />
         <StatCard title="Open" value={counts.open} accent="pink" />
+        <StatCard title="Funded" value={counts.funded} accent="green" />
         <StatCard title="Partial" value={counts.partial} accent="orange" />
-        <StatCard title="Closed" value={counts.closed} accent="green" />
+        <StatCard title="Cancelled" value={counts.cancelled} accent="pink" />
+        <StatCard title="Expired" value={counts.expired} accent="blue" />
         <StatCard title="Raised" value={money(counts.raised)} accent="blue" />
       </div>
 
@@ -98,8 +148,10 @@ export default function MyRequestsPage() {
               >
                 <option value="all">All statuses</option>
                 <option value="OPEN">Open</option>
+                <option value="FUNDED">Funded</option>
                 <option value="PARTIAL">Partial</option>
-                <option value="CLOSED">Closed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="EXPIRED">Expired</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -107,7 +159,9 @@ export default function MyRequestsPage() {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="px-3 py-6 text-center text-slate-500">Loading your requests…</div>
+          ) : filtered.length === 0 ? (
             <div className="px-3 py-6 text-center text-slate-500">No requests match your filters.</div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -157,22 +211,73 @@ export default function MyRequestsPage() {
         </CardContent>
       </Card>
 
-      {showNew && <NewRequestModal onClose={() => setShowNew(false)} onCreate={(req) => { setItems((prev) => [{...req, id: `RQ-${(prev.length+101).toString()}`, loanNumber: `LR-2026-${(prev.length+1101).toString().padStart(4, "0")}`, funded: 0, status: "OPEN", createdAt: new Date().toISOString()}, ...prev]); setShowNew(false); }} />}
+      {showNew && <NewRequestModal onClose={() => setShowNew(false)} onCreated={(created) => {
+        // Optimistically add the created request to local list
+        setItems((prev) => [{
+          id: created.id,
+          loanNumber: created.loanNumber ?? created.id,
+          amount: created.amount,
+          minAmount: created.minAmount,
+          funded: created.amountFunded ?? 0,
+          interestRate: created.interestRate,
+          durationDays: created.durationDays,
+          purpose: created.purpose,
+          status: mapStatus(created.status as any),
+          createdAt: created.createdAt,
+          expiresAt: created.expiresAt,
+        }, ...prev]);
+        setShowNew(false);
+      }} />}
     </div>
   );
 }
 
-function NewRequestModal({ onClose, onCreate }: { onClose: () => void; onCreate: (r: Omit<MyRequest, "id"|"loanNumber"|"funded"|"status"|"createdAt">) => void }) {
+function NewRequestModal({ onClose, onCreated }: { onClose: () => void; onCreated: (created: any) => void }) {
   const [amount, setAmount] = useState<number | "">(1000);
   const [minAmount, setMinAmount] = useState<number | "">(250);
   const [interestRate, setInterestRate] = useState<number | "">(6.0);
   const [durationDays, setDurationDays] = useState<number | "">(30);
   const [purpose, setPurpose] = useState("");
-  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [fundingDeadline, setFundingDeadline] = useState<string>("");
+  const [isPublic, setIsPublic] = useState<boolean>(true);
+  const [maxLenders, setMaxLenders] = useState<number | "">(1);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const toIsoMidday = (d?: string): string | undefined => {
+    if (!d) return undefined;
+    return `${d}T12:00:00.000Z`;
+  };
+
+  const submit = async () => {
     if (amount === "" || durationDays === "" || interestRate === "") return;
-    onCreate({ amount: Number(amount), minAmount: minAmount === "" ? undefined : Number(minAmount), interestRate: Number(interestRate), durationDays: Number(durationDays), purpose: purpose || undefined, createdAt: new Date().toISOString(), expiresAt: expiresAt || undefined } as any);
+    setSubmitting(true);
+    try {
+      const payload = {
+        amount: Number(amount),
+        minAmount: minAmount === "" ? undefined : Number(minAmount),
+        interestRate: Number(interestRate),
+        durationDays: Number(durationDays),
+        purpose: purpose || undefined,
+        isPublic,
+        maxLenders: maxLenders === "" ? undefined : Number(maxLenders),
+        fundingDeadline: toIsoMidday(fundingDeadline),
+        // Some backends use expiresAt; send both when present
+        expiresAt: toIsoMidday(fundingDeadline),
+      };
+      const created = await loanRequestClient.create(payload);
+      toast.success("Loan request created");
+      onCreated(created);
+    } catch (err: any) {
+      const msg = err?.message || "Failed to create request";
+      // Specific case: documents not verified
+      if (typeof err?.details === "object" && err?.status === 400) {
+        toast.error("User documents not verified");
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -206,14 +311,24 @@ function NewRequestModal({ onClose, onCreate }: { onClose: () => void; onCreate:
             <label className="text-sm">Purpose</label>
             <Textarea className="mt-1" rows={4} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
           </div>
-          <div>
-            <label className="text-sm">Funding Deadline</label>
-            <Input type="date" className="mt-1" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm">Funding Deadline</label>
+              <Input type="date" className="mt-1" value={fundingDeadline} onChange={(e) => setFundingDeadline(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm">Max Lenders</label>
+              <Input type="number" className="mt-1" value={maxLenders} onChange={(e) => setMaxLenders(e.target.value === "" ? "" : Number(e.target.value))} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input id="isPublic" type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+            <label htmlFor="isPublic" className="text-sm">Public request</label>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-end gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit}>Create</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Creating..." : "Create"}</Button>
         </div>
       </div>
     </div>

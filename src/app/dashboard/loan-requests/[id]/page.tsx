@@ -1,26 +1,13 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-type LoanRequestResponseDto = {
-  id: string;
-  borrowerId: string;
-  amount: number;
-  minAmount?: number;
-  interestRate: number;
-  durationDays: number;
-  purpose?: string;
-  amountFunded: number;
-  amountNeeded: number;
-  status: string; // e.g., OPEN
-  fundingDeadline?: string; // ISO
-  isPublic: boolean;
-  maxLenders: number;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt?: string;
-};
+import { loanRequestClient } from "@/lib/loanRequestClient";
+import type { LoanRequestResponseDto } from "@/lib/loanRequestClient";
+import { toast } from "sonner";
+import { useParams } from "next/navigation";
 
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
@@ -34,61 +21,76 @@ function badgeClass(status: string) {
   const s = status.toUpperCase();
   if (s === "OPEN") return "text-blue bg-blue/10";
   if (s === "FUNDED") return "text-emerald-600 bg-emerald-100";
-  if (s === "REJECTED") return "text-rose-600 bg-rose-100";
-  if (s === "PENDING") return "text-amber-600 bg-amber-100";
+  if (s === "PARTIAL") return "text-amber-700 bg-amber-100";
+  if (s === "CANCELLED") return "text-rose-600 bg-rose-100";
+  if (s === "EXPIRED") return "text-slate-700 bg-slate-100";
   return "text-slate-700 bg-slate-100";
 }
 
-function sampleById(id?: string): LoanRequestResponseDto {
-  // Simple deterministic sample seeded by id length/digits
-  const safe = (id ?? "").toString();
-  const digits = Array.from(safe).filter((c) => /\d/.test(c)).map(Number);
-  const base = digits.reduce((a, b) => a + b, 0) || 7;
-  const amount = 1000 + base * 150;
-  const interestRate = 4 + (base % 5) + 0.5;
-  const durationDays = 30 * (6 + (base % 13));
-  const funded = Math.round(amount * ((base % 6) / 10));
-  const needed = Math.max(amount - funded, 0);
-  const now = new Date();
-  const created = new Date(now.getTime() - 1000 * 60 * 60 * 24 * (7 + (base % 20)));
-  const updated = new Date(created.getTime() + 1000 * 60 * 60 * (12 + (base % 48)));
-  const deadline = new Date(now.getTime() + 1000 * 60 * 60 * 24 * (5 + (base % 12)));
-  const status = needed > 0 ? "OPEN" : "FUNDED";
-  return {
-    id: safe || "loan-request-unknown",
-    borrowerId: `borrower-${base}`,
-    amount,
-    minAmount: Math.round(amount * 0.25),
-    interestRate,
-    durationDays,
-    purpose: "Loan for business",
-    amountFunded: funded,
-    amountNeeded: needed,
-    status,
-    fundingDeadline: deadline.toISOString(),
-    isPublic: true,
-    maxLenders: 5 + (base % 5),
-    createdAt: created.toISOString(),
-    updatedAt: updated.toISOString(),
-    expiresAt: deadline.toISOString(),
-  };
-}
+const toNum = (x: any): number => {
+  if (x == null) return 0;
+  const n = typeof x === "string" ? Number(x) : x;
+  return Number.isFinite(n) ? n : 0;
+};
 
-export default function LoanRequestDetailPage({ params }: { params?: { id?: string } }) {
-  const pid = typeof params?.id === "string" ? params!.id : "";
-  const data = sampleById(pid);
+export default function LoanRequestDetailPage() {
+  const params = useParams();
+  const pid = typeof params?.id === "string" ? (params.id as string) : "";
+  const [data, setData] = useState<LoanRequestResponseDto | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await loanRequestClient.get(pid);
+        if (mounted) setData(res);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to load loan request");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [pid]);
+
+  const computed = useMemo(() => {
+    if (!data) return null;
+    const amount = toNum(data.amount);
+    const minAmount = data.minAmount != null ? toNum(data.minAmount) : undefined;
+    const funded = toNum(data.amountFunded);
+    const needed = data.amountNeeded != null ? toNum(data.amountNeeded) : Math.max(amount - funded, 0);
+    return { amount, minAmount, funded, needed };
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] grid place-items-center">
+        <div className="h-8 w-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data || !computed) {
+    return (
+      <div>
+        <PageHeader title="Request Not Found" subtitle="We couldn’t find this request" actions={<Button asChild variant="outline" size="sm"><Link href="/dashboard/loan-requests">Back to list</Link></Button>} />
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader
-        title={`Loan Request ${data.id}`}
+        title={`Loan Request ${data.loanNumber ?? data.id}`}
         subtitle={`Status: ${data.status}`}
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/loan-requests">Back to list</Link>
             </Button>
-            {data.status === "OPEN" && (
+            {data.status?.toUpperCase() === "OPEN" && (
               <Button asChild size="sm">
                 <Link href={`/dashboard/loan-requests/${encodeURIComponent(data.id)}/offer-loan`}>Offer Loan</Link>
               </Button>
@@ -106,27 +108,27 @@ export default function LoanRequestDetailPage({ params }: { params?: { id?: stri
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Amount</div>
-                <div className="text-lg font-semibold">{money(data.amount)}</div>
+                <div className="text-lg font-semibold">{money(computed.amount)}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Minimum Amount</div>
-                <div className="text-lg font-semibold">{data.minAmount ? money(data.minAmount) : "—"}</div>
+                <div className="text-lg font-semibold">{computed.minAmount != null ? money(computed.minAmount) : "—"}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Interest Rate</div>
-                <div className="text-lg font-semibold">{data.interestRate}% / mo</div>
+                <div className="text-lg font-semibold">{toNum(data.interestRate)}% / mo</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Duration</div>
-                <div className="text-lg font-semibold">{data.durationDays} days</div>
+                <div className="text-lg font-semibold">{toNum(data.durationDays)} days</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Funded</div>
-                <div className="text-lg font-semibold">{money(data.amountFunded)}</div>
+                <div className="text-lg font-semibold">{money(computed.funded)}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">Needed</div>
-                <div className="text-lg font-semibold">{money(data.amountNeeded)}</div>
+                <div className="text-lg font-semibold">{money(computed.needed)}</div>
               </div>
             </div>
 
