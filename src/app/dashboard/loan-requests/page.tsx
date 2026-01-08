@@ -78,7 +78,7 @@ export default function LoanRequestsPage() {
                 <select
                   className="h-9 rounded-md border bg-white px-3 text-sm"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => setStatus(e.target.value as RequestStatus | "all")}
                 >
                   <option value="all">All statuses</option>
                   <option value="open">Open</option>

@@ -1,67 +1,109 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { KpiAreaChart } from "@/components/charts/KpiAreaChart";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { DollarSign, TrendingUp, Users, HandCoins, Handshake, AlarmClock, CheckCircle2 } from "lucide-react";
-
-type LoanStatus = "ACTIVE" | "OVERDUE" | "REPAID";
-type RequestStatus = "OPEN" | "PARTIAL" | "CLOSED";
-type OfferStatus = "PENDING" | "ACCEPTED" | "REJECTED";
-
-const REQUESTS: Array<{ id: string; loanNumber: string; amount: number; funded: number; status: RequestStatus; createdAt: string; expiresAt: string }> = [
-  { id: "RQ-101", loanNumber: "LR-2026-0101", amount: 5000, funded: 3200, status: "OPEN", createdAt: "2026-01-03", expiresAt: "2026-01-20" },
-  { id: "RQ-102", loanNumber: "LR-2026-0102", amount: 2800, funded: 2800, status: "CLOSED", createdAt: "2026-01-01", expiresAt: "2026-01-10" },
-  { id: "RQ-103", loanNumber: "LR-2026-0103", amount: 4200, funded: 1800, status: "PARTIAL", createdAt: "2026-01-05", expiresAt: "2026-01-25" },
-  { id: "RQ-104", loanNumber: "LR-2026-0104", amount: 1500, funded: 0, status: "OPEN", createdAt: "2026-01-07", expiresAt: "2026-01-21" },
-];
-
-const OFFERS: Array<{ id: string; amount: number; interestRate: number; status: OfferStatus; createdAt: string; loanNumber: string }> = [
-  { id: "OF-501", amount: 1000, interestRate: 6.0, status: "ACCEPTED", createdAt: "2026-01-06", loanNumber: "LR-2026-0099" },
-  { id: "OF-502", amount: 800, interestRate: 5.8, status: "PENDING", createdAt: "2026-01-07", loanNumber: "LR-2026-0103" },
-  { id: "OF-503", amount: 1200, interestRate: 6.2, status: "PENDING", createdAt: "2026-01-07", loanNumber: "LR-2026-0101" },
-  { id: "OF-504", amount: 600, interestRate: 5.9, status: "REJECTED", createdAt: "2026-01-02", loanNumber: "LR-2026-0081" },
-];
-
-const LOANS: Array<{ id: string; loanNumber: string; amount: number; status: LoanStatus; dueDate?: string }> = [
-  { id: "LN-001", loanNumber: "LN-2026-0001", amount: 1000, status: "ACTIVE", dueDate: "2026-02-06" },
-  { id: "LN-002", loanNumber: "LN-2026-0002", amount: 2500, status: "REPAID" },
-  { id: "LN-003", loanNumber: "LN-2026-0004", amount: 1600, status: "OVERDUE", dueDate: "2026-01-20" },
-  { id: "LN-004", loanNumber: "LN-2026-0005", amount: 900, status: "ACTIVE", dueDate: "2026-02-05" },
-];
-
-const TRUST_HISTORY = [
-  { name: "Nov", value: 80 },
-  { name: "Dec", value: 84 },
-  { name: "Jan", value: 86 },
-];
-
-const FUNDING_ACTIVITY = [
-  { name: "W1", value: 2 },
-  { name: "W2", value: 3 },
-  { name: "W3", value: 1 },
-  { name: "W4", value: 4 },
-];
+import { authClient } from "@/lib/authClient";
 
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+type ChartPoint = { name: string; value: number };
+
 export default function DashboardOverviewPage() {
-  const walletBalance = 12450;
-  const trustScore = TRUST_HISTORY[TRUST_HISTORY.length - 1]?.value ?? 0;
+  const [p, setP] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const offersTotal = OFFERS.length;
-  const offersPending = OFFERS.filter((o) => o.status === "PENDING").length;
-  const offersAccepted = OFFERS.filter((o) => o.status === "ACCEPTED").length;
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await authClient.profile();
+        if (!mounted) return;
+        setP(data);
+      } catch (e) {
+        // Global toast handled by appClient
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const reqOpen = REQUESTS.filter((r) => r.status === "OPEN").length;
-  const reqPartial = REQUESTS.filter((r) => r.status === "PARTIAL").length;
+  const trustHistory: ChartPoint[] = useMemo(() => {
+    const hist = (p?.trustScoreHistory ?? []).map((h: any) => ({
+      name: new Date(h.createdAt).toLocaleDateString(),
+      value: Number(h.newScore ?? 0),
+    }));
+    if (hist.length === 0) return [];
+    return [...hist].reverse();
+  }, [p?.trustScoreHistory]);
 
-  const loansActive = LOANS.filter((l) => l.status === "ACTIVE").length;
-  const loansOverdue = LOANS.filter((l) => l.status === "OVERDUE").length;
-  const loansRepaid = LOANS.filter((l) => l.status === "REPAID").length;
+  function getISOWeek(d: Date) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  }
 
-  const upcoming = LOANS.filter((l) => l.status !== "REPAID" && l.dueDate).slice(0, 4);
+  const fundingActivity: ChartPoint[] = useMemo(() => {
+    const offers = p?.loanOffers ?? [];
+    if (!offers.length) return [];
+    const map = new Map<string, number>();
+    for (const o of offers) {
+      const k = getISOWeek(new Date(o.createdAt));
+      map.set(k, (map.get(k) ?? 0) + 1);
+    }
+    const keys = Array.from(map.keys()).sort();
+    const last = keys.slice(-4);
+    return last.map((k) => ({ name: k.split("-")[1] ?? k, value: map.get(k) ?? 0 }));
+  }, [p?.loanOffers]);
+
+  const walletBalance = Number(p?.walletBalance ?? 0);
+  const trustScore = Number(p?.trustScore ?? (trustHistory[trustHistory.length - 1]?.value ?? 0));
+
+  const offers = p?.loanOffers ?? [];
+  const offersTotal = offers.length;
+  const offersPending = offers.filter((o: any) => String(o.status).toUpperCase() === "PENDING").length;
+  const offersAccepted = offers.filter((o: any) => String(o.status).toUpperCase() === "ACCEPTED").length;
+
+  const requests = p?.loanRequests ?? [];
+  const reqOpen = requests.filter((r: any) => String(r.status).toUpperCase() === "OPEN").length;
+  const reqPartial = requests.filter((r: any) => String(r.status).toUpperCase() === "PARTIAL").length;
+
+  const loansBorrower = p?.loansAsBorrower ?? [];
+  const loansLender = p?.loansAsLender ?? [];
+  const allLoans = [...loansBorrower, ...loansLender];
+  const loansActive = allLoans.filter((l: any) => String(l.status).toUpperCase() === "ACTIVE").length;
+  const loansOverdue = allLoans.filter((l: any) => String(l.status).toUpperCase() === "OVERDUE" || l.isLate === true).length;
+  const loansRepaid = allLoans.filter((l: any) => String(l.status).toUpperCase() === "REPAID").length;
+
+  const upcoming = useMemo(() => {
+    const pending = allLoans
+      .filter((l: any) => String(l.status).toUpperCase() !== "REPAID" && l.dueDate)
+      .slice()
+      .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+      .slice(0, 4)
+      .map((l: any) => {
+        const overdue = String(l.status).toUpperCase() === "OVERDUE" || l.isLate === true || (l.dueDate && new Date(l.dueDate) < new Date());
+        return {
+          id: l.id,
+          loanNumber: l.loanNumber,
+          amount: Number(l.amount ?? 0),
+          status: overdue ? "OVERDUE" : String(l.status).toUpperCase(),
+          dueDate: l.dueDate,
+        };
+      });
+    return pending;
+  }, [allLoans]);
 
   return (
     <div>
@@ -88,7 +130,7 @@ export default function DashboardOverviewPage() {
             <CardDescription>Recent trend</CardDescription>
           </CardHeader>
           <CardContent>
-            <KpiAreaChart data={TRUST_HISTORY} color="#2563eb" />
+            <KpiAreaChart data={trustHistory} color="#2563eb" />
           </CardContent>
         </Card>
 
@@ -98,7 +140,7 @@ export default function DashboardOverviewPage() {
             <CardDescription>Offers created per week</CardDescription>
           </CardHeader>
           <CardContent>
-            <KpiAreaChart data={FUNDING_ACTIVITY} color="#16a34a" />
+            <KpiAreaChart data={fundingActivity} color="#16a34a" />
           </CardContent>
         </Card>
       </div>
@@ -111,14 +153,18 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
-              {REQUESTS.slice(0, 5).map((r) => (
+              {[...requests]
+                .slice()
+                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map((r: any) => (
                 <div key={r.id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{r.loanNumber}</div>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{r.status}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{String(r.status)}</span>
                   </div>
-                  <div className="mt-1 text-slate-700">Raised {money(r.funded)} of {money(r.amount)}</div>
-                  <div className="text-xs text-slate-500">Expires {new Date(r.expiresAt).toLocaleDateString()}</div>
+                  <div className="mt-1 text-slate-700">Raised {money(Number(r.amountFunded ?? 0))} of {money(Number(r.amount ?? 0))}</div>
+                  <div className="text-xs text-slate-500">Expires {r.expiresAt ? new Date(r.expiresAt).toLocaleDateString() : "—"}</div>
                 </div>
               ))}
             </div>
@@ -132,13 +178,17 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
-              {OFFERS.slice(0, 5).map((o) => (
+              {[...offers]
+                .slice()
+                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map((o: any) => (
                 <div key={o.id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium">{o.loanNumber}</div>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{o.status}</span>
+                    <div className="font-medium">{o.loanRequest?.loanNumber ?? o.loanNumber ?? "—"}</div>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{String(o.status)}</span>
                   </div>
-                  <div className="mt-1 text-slate-700">{money(o.amount)} at {o.interestRate}%/mo</div>
+                  <div className="mt-1 text-slate-700">{money(Number(o.amount ?? 0))} at {String(o.interestRate)}%/mo</div>
                   <div className="text-xs text-slate-500">{new Date(o.createdAt).toLocaleDateString()}</div>
                 </div>
               ))}
@@ -153,13 +203,13 @@ export default function DashboardOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
-              {upcoming.map((l) => (
+              {upcoming.map((l: any) => (
                 <div key={l.id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{l.loanNumber}</div>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "OVERDUE" ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"}`}>{l.status}</span>
                   </div>
-                  <div className="mt-1 text-slate-700">Amount {money(l.amount)}</div>
+                  <div className="mt-1 text-slate-700">Amount {money(Number(l.amount ?? 0))}</div>
                   <div className="text-xs text-slate-500">Due {l.dueDate ? new Date(l.dueDate).toLocaleDateString() : "—"}</div>
                 </div>
               ))}

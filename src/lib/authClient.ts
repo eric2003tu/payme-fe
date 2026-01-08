@@ -31,4 +31,7 @@ export const authClient = {
   getSession(): AuthSession | null {
     return loadSession();
   },
+  async profile(): Promise<any> {
+    return appClient.get<any>("/auth/profile");
+  },
 };
