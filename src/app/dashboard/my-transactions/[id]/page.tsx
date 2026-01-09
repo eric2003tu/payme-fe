@@ -17,6 +17,12 @@ import {
   FileText,
   ArrowLeft,
   CheckCircle2,
+  Mail,
+  Phone,
+  IdCard,
+  UserCircle2,
+  Gauge,
+  MapPin,
 } from "lucide-react";
 
 function toNumber(n: number | string | undefined | null): number {
@@ -32,6 +38,11 @@ function money(n: number) {
 
 function dateStr(s?: string | null) {
   return s ? new Date(s).toLocaleString() : "—";
+}
+
+function safe<T = any>(v: T | null | undefined, fallback: string = "—"): T | string {
+  if (v === null || v === undefined || v === "") return fallback;
+  return v as T;
 }
 
 function statusIcon(status: string) {
@@ -193,24 +204,196 @@ export default function LoanDetailsPage() {
               <Card>
                 <CardHeader className="border-b">
                   <CardTitle className="flex items-center gap-2"><FaUser className="text-slate-600" /> Borrower</CardTitle>
-                  <CardDescription>Borrower details</CardDescription>
+                  <CardDescription>Full borrower details</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 text-sm">
-                  <div className="font-semibold">{loan.borrower?.firstName} {loan.borrower?.lastName}</div>
-                  <div className="text-slate-500">{loan.borrower?.email}</div>
-                  <div className="text-slate-500">{loan.borrower?.phone}</div>
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-2"><UserCircle2 size={16} /> <span className="font-semibold">{safe(`${loan.borrower?.firstName || ""} ${loan.borrower?.lastName || ""}`.trim())}</span></div>
+                    <div className="flex items-center gap-2 text-slate-600"><Mail size={16} /> {safe(loan.borrower?.email)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><Phone size={16} /> {safe(loan.borrower?.phone)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><CalendarDays size={16} /> {dateStr(loan.borrower?.dateOfBirth)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><IdCard size={16} /> NID: {safe(loan.borrower?.nationalId)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><Gauge size={16} /> Trust Score: {safe(loan.borrower?.trustScore)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><CheckCircle2 size={16} /> Category: {safe(loan.borrower?.category)}</div>
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="text-xs text-slate-500 mb-2">Address</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500 flex items-center gap-2"><MapPin size={14} /> Street</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.street)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Latitude</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.latitude)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Longitude</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.longitude)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Country</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.country?.name)} ({safe(loan.borrower?.address?.country?.code)})</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.country?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Province</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.province?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.province?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">District</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.district?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.district?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Sector</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.sector?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.sector?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Cell</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.cell?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.cell?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Village</div>
+                        <div className="font-semibold">{safe(loan.borrower?.address?.village?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.borrower?.address?.village?.id)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="text-xs text-slate-500 mb-2">Family Details</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse Name</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.spouseName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse National ID</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.spouseNationalId)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse Phone</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.spousePhone)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Father Name</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.fatherName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Mother Name</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.motherName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Emergency Contact</div>
+                        <div className="font-semibold">{safe(loan.borrower?.familyDetails?.emergencyContactName)}</div>
+                        <div className="text-xs text-slate-500">{safe(loan.borrower?.familyDetails?.emergencyContactPhone)}</div>
+                        <div className="text-xs text-slate-400">Relation: {safe(loan.borrower?.familyDetails?.emergencyContactRelation)}</div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="border-b">
                   <CardTitle className="flex items-center gap-2"><FaUserTie className="text-slate-600" /> Lender</CardTitle>
-                  <CardDescription>Lender details</CardDescription>
+                  <CardDescription>Full lender details</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 text-sm">
-                  <div className="font-semibold">{loan.lender?.firstName} {loan.lender?.lastName}</div>
-                  <div className="text-slate-500">{loan.lender?.email}</div>
-                  <div className="text-slate-500">{loan.lender?.phone}</div>
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-2"><UserCircle2 size={16} /> <span className="font-semibold">{safe(`${loan.lender?.firstName || ""} ${loan.lender?.lastName || ""}`.trim())}</span></div>
+                    <div className="flex items-center gap-2 text-slate-600"><Mail size={16} /> {safe(loan.lender?.email)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><Phone size={16} /> {safe(loan.lender?.phone)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><CalendarDays size={16} /> {dateStr(loan.lender?.dateOfBirth)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><IdCard size={16} /> NID: {safe(loan.lender?.nationalId)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><Gauge size={16} /> Trust Score: {safe(loan.lender?.trustScore)}</div>
+                    <div className="flex items-center gap-2 text-slate-600"><CheckCircle2 size={16} /> Category: {safe(loan.lender?.category)}</div>
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="text-xs text-slate-500 mb-2">Address</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500 flex items-center gap-2"><MapPin size={14} /> Street</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.street)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Latitude</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.latitude)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Longitude</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.longitude)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Country</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.country?.name)} ({safe(loan.lender?.address?.country?.code)})</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.country?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Province</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.province?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.province?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">District</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.district?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.district?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Sector</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.sector?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.sector?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Cell</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.cell?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.cell?.id)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Village</div>
+                        <div className="font-semibold">{safe(loan.lender?.address?.village?.name)}</div>
+                        <div className="text-xs text-slate-400">ID: {safe(loan.lender?.address?.village?.id)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="text-xs text-slate-500 mb-2">Family Details</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse Name</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.spouseName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse National ID</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.spouseNationalId)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Spouse Phone</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.spousePhone)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Father Name</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.fatherName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Mother Name</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.motherName)}</div>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <div className="text-xs text-slate-500">Emergency Contact</div>
+                        <div className="font-semibold">{safe(loan.lender?.familyDetails?.emergencyContactName)}</div>
+                        <div className="text-xs text-slate-500">{safe(loan.lender?.familyDetails?.emergencyContactPhone)}</div>
+                        <div className="text-xs text-slate-400">Relation: {safe(loan.lender?.familyDetails?.emergencyContactRelation)}</div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

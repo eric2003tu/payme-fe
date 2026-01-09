@@ -1,12 +1,45 @@
 import { appClient } from "./appClient";
 import { LoanStatus } from "./types";
 
+export type GeoRef = { id: string; name: string; code?: string };
+
+export type PartyAddress = {
+  street?: string;
+  latitude?: number;
+  longitude?: number;
+  country?: GeoRef;
+  province?: GeoRef;
+  district?: GeoRef;
+  sector?: GeoRef;
+  cell?: GeoRef;
+  village?: GeoRef;
+};
+
+export type FamilyDetails = {
+  spouseName?: string | null;
+  spouseNationalId?: string | null;
+  spousePhone?: string | null;
+  fatherName?: string | null;
+  motherName?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRelation?: string | null;
+};
+
 export type PartyDto = {
   id: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
+  dateOfBirth?: string;
+  maritalStatus?: string;
+  nationalId?: string;
+  profilePicture?: string | null;
+  trustScore?: number;
+  category?: string;
+  address?: PartyAddress;
+  familyDetails?: FamilyDetails;
 };
 
 export type LoanDto = {

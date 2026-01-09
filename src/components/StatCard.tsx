@@ -8,7 +8,7 @@ type StatCardProps = {
   value: string | number;
   delta?: string;
   icon?: ReactNode;
-  accent?: "blue" | "green" | "orange" | "pink";
+  accent?: "blue" | "green" | "orange" | "pink" | "yellow" | "purple" | "gray";
 };
 
 export function StatCard({ title, value, delta, icon, accent = "blue" }: StatCardProps) {

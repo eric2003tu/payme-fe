@@ -3,6 +3,9 @@ export const theme = {
   green: "var(--brand-green)",
   orange: "var(--brand-orange)",
   pink: "var(--brand-pink)",
+  yellow: "#facc15", // Tailwind yellow-400
+  purple: "#a78bfa", // Tailwind purple-400
+  gray: "#a3a3a3", // Tailwind gray-400
   white: "var(--brand-white)",
 };
 
