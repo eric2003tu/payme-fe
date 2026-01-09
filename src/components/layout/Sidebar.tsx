@@ -10,6 +10,7 @@ const baseLinks = [
   { href: "/dashboard/my-loans", label: "My Loans", icon: FileText },
   { href: "/dashboard/loan-requests", label: "Loan Requests", icon: FileCheck },
   { href: "/dashboard/my-requests", label: "My Requests", icon: FileCheck },
+  { href: "/dashboard/my-transactions", label: "My Transactions", icon: Landmark },
   { href: "/dashboard/lenders", label: "Lenders", icon: Users },
   { href: "/dashboard/borrowers", label: "Borrowers", icon: Users },
   { href: "/dashboard/borrowes", label: "Borrowes", icon: Users },

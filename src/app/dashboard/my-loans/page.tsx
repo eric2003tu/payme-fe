@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FaClock, FaBolt, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { BarChart3, Activity, AlertTriangle, CheckCircle2, CircleDollarSign } from "lucide-react";
 
 type LoanResponseDto = {
   id: string;
@@ -237,11 +238,11 @@ export default function MyLoansPage() {
       <PageHeader title="My Loans" subtitle="Loans you borrowed or lent" />
 
       <div className="grid gap-4 md:grid-cols-5">
-        <StatCard title="Total" value={counts.total} accent="blue" />
-        <StatCard title="Active" value={counts.active} accent="pink" />
-        <StatCard title="Late" value={counts.late} accent="orange" />
-        <StatCard title="Repaid" value={counts.repaid} accent="green" />
-        <StatCard title="Amount Due" value={money(counts.dueSum)} accent="orange" />
+        <StatCard title="Total" value={counts.total} accent="blue" icon={<BarChart3 size={18} />} />
+        <StatCard title="Active" value={counts.active} accent="pink" icon={<Activity size={18} />} />
+        <StatCard title="Late" value={counts.late} accent="orange" icon={<AlertTriangle size={18} />} />
+        <StatCard title="Repaid" value={counts.repaid} accent="green" icon={<CheckCircle2 size={18} />} />
+        <StatCard title="Amount Due" value={money(counts.dueSum)} accent="orange" icon={<CircleDollarSign size={18} />} />
       </div>
 
       <Card className="mt-6">
