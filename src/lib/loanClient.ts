@@ -73,6 +73,14 @@ export type LoanDto = {
 };
 
 export const loanClient = {
+    /**
+     * Lender confirms payment received and marks loan as REPAID
+     * @param id Loan ID
+     * @returns Updated LoanDto
+     */
+    async confirmPaymentByLender(id: string): Promise<LoanDto> {
+      return appClient.request<LoanDto>(`/loan/${encodeURIComponent(id)}/confirm-payment-by-lender`, { method: "PATCH" });
+    },
   async meBorrowed(): Promise<LoanDto[]> {
     return appClient.get<LoanDto[]>("/loan/me/borrowed");
   },
@@ -89,5 +97,14 @@ export const loanClient = {
    */
   async signByLender(id: string): Promise<LoanDto> {
     return appClient.request<LoanDto>(`/loan/${encodeURIComponent(id)}/sign-by-lender`, { method: "PATCH" });
+  },
+
+  /**
+   * Borrower marks loan as paid (notifies lender for confirmation)
+   * @param id Loan ID
+   * @returns Updated LoanDto
+   */
+  async markPaidByBorrower(id: string): Promise<LoanDto> {
+    return appClient.request<LoanDto>(`/loan/${encodeURIComponent(id)}/mark-paid-by-borrower`, { method: "PATCH" });
   },
 };

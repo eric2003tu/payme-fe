@@ -41,6 +41,8 @@ function statusIcon(status: string) {
     case "OVERDUE":
     case "DEFAULTED":
       return <FaExclamationTriangle className="h-4 w-4 text-rose-600" />;
+    case "PAYMENT_INITIATED":
+      return <FaClock className="h-4 w-4 text-indigo-600" />;
     default:
       return <FaClock className="h-4 w-4 text-slate-500" />;
   }
@@ -55,6 +57,7 @@ function StatusBadge({ status }: { status: string }) {
     OVERDUE: "text-rose-600 bg-rose-100",
     DEFAULTED: "text-rose-700 bg-rose-100",
     CANCELLED: "text-slate-600 bg-slate-100",
+    PAYMENT_INITIATED: "text-indigo-600 bg-indigo-100",
   };
   const cl = map[s] || "text-slate-600 bg-slate-100";
   return (
@@ -164,6 +167,7 @@ export default function MyTransactionsPage() {
                 <option value="all">All statuses</option>
                 <option value="PENDING">Pending</option>
                 <option value="ACTIVE">Active</option>
+                <option value="PAYMENT_INITIATED">Payment Initiated</option>
                 <option value="OVERDUE">Overdue</option>
                 <option value="REPAID">Repaid</option>
                 <option value="DEFAULTED">Defaulted</option>
@@ -249,6 +253,17 @@ export default function MyTransactionsPage() {
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/dashboard/my-transactions/${l.id}`}>View</Link>
                     </Button>
+                    {/* Borrower pay button for non-pending loans */}
+                    {view === "borrower" && String(l.status).toUpperCase() !== "PENDING" && String(l.status).toUpperCase() !== "REPAID" && !l.repaidAt && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={signing && signingLoanId === l.id}
+                        onClick={() => { setSigningLoanId(l.id); setConfirmOpen(true); }}
+                      >
+                        Mark as Paid
+                      </Button>
+                    )}
                     {/* Lender sign button for pending loans */}
                     {view === "lender" && String(l.status).toUpperCase() === "PENDING" && !l.signedByLender && (
                       <Button
@@ -260,6 +275,17 @@ export default function MyTransactionsPage() {
                         Sign & Offer Loan
                       </Button>
                     )}
+                    {/* Lender confirm payment button only for PAYMENT_INITIATED status */}
+                    {view === "lender" && String(l.status).toUpperCase() === "PAYMENT_INITIATED" && !l.repaidAt && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={signing && signingLoanId === l.id}
+                        onClick={() => { setSigningLoanId(l.id); setConfirmOpen(true); }}
+                      >
+                        Confirm Payment Received
+                      </Button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -267,12 +293,33 @@ export default function MyTransactionsPage() {
           )}
         </CardContent>
       </Card>
-      {/* Confirmation dialog for lender sign */}
+      {/* Confirmation dialog for lender sign or borrower pay */}
       <ConfirmDialog
         open={confirmOpen}
-        title="Sign & Offer Loan"
-        description="Are you sure you want to sign and offer this loan? This action cannot be undone."
-        confirmText={signing ? "Signing..." : "Yes, Sign & Offer"}
+        title={
+          view === "lender"
+            ? (signingLoanId && current.find(l => l.id === signingLoanId && String(l.status).toUpperCase() !== "PENDING" && String(l.status).toUpperCase() !== "REPAID" && !l.repaidAt)
+                ? "Confirm Payment Received" : "Sign & Offer Loan")
+            : "Mark Loan as Paid"
+        }
+        description={
+          view === "lender"
+            ? (signingLoanId && current.find(l => l.id === signingLoanId && String(l.status).toUpperCase() !== "PENDING" && String(l.status).toUpperCase() !== "REPAID" && !l.repaidAt)
+                ? "Are you sure you want to confirm you have received payment for this loan? This will mark the loan as repaid."
+                : "Are you sure you want to sign and offer this loan? This action cannot be undone.")
+            : "Are you sure you have paid this loan? This will notify the lender for confirmation."
+        }
+        confirmText={
+          signing
+            ? (view === "lender"
+                ? (signingLoanId && current.find(l => l.id === signingLoanId && String(l.status).toUpperCase() !== "PENDING" && String(l.status).toUpperCase() !== "REPAID" && !l.repaidAt)
+                    ? "Confirming..." : "Signing...")
+                : "Marking...")
+            : (view === "lender"
+                ? (signingLoanId && current.find(l => l.id === signingLoanId && String(l.status).toUpperCase() !== "PENDING" && String(l.status).toUpperCase() !== "REPAID" && !l.repaidAt)
+                    ? "Yes, Confirm Payment" : "Yes, Sign & Offer")
+                : "Yes, I Have Paid")
+        }
         cancelText="Cancel"
         onCancel={() => { setConfirmOpen(false); setSigningLoanId(null); setError(null); }}
         onConfirm={async () => {
@@ -280,7 +327,18 @@ export default function MyTransactionsPage() {
           setSigning(true);
           setError(null);
           try {
-            await loanClient.signByLender(signingLoanId);
+            if (view === "lender") {
+              const loan = current.find(l => l.id === signingLoanId);
+              if (loan && String(loan.status).toUpperCase() === "PAYMENT_INITIATED" && !loan.repaidAt) {
+                await loanClient.confirmPaymentByLender(signingLoanId);
+              } else if (loan && String(loan.status).toUpperCase() === "PENDING" && !loan.signedByLender) {
+                await loanClient.signByLender(signingLoanId);
+              } else {
+                throw new Error("Action not allowed for this loan status.");
+              }
+            } else {
+              await loanClient.markPaidByBorrower(signingLoanId);
+            }
             setConfirmOpen(false);
             setSigningLoanId(null);
             // Optionally, refresh the list
@@ -289,7 +347,7 @@ export default function MyTransactionsPage() {
             setBorrowed(b || []);
             setLent(l || []);
           } catch (e: any) {
-            setError(e?.message || "Failed to sign loan");
+            setError(e?.message || (view === "lender" ? "Failed to sign/confirm loan" : "Failed to mark as paid"));
           } finally {
             setSigning(false);
           }

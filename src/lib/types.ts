@@ -43,6 +43,7 @@ export enum LoanStatus {
   DEFAULTED = "DEFAULTED",
   CANCELLED = "CANCELLED",
   OVERDUE = "OVERDUE",
+  PAYMENT_INITIATED = "PAYMENT_INITIATED",
 }
 
 export enum LoanRequestStatus {
