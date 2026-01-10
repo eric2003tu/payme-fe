@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { loanClient, LoanDto } from "@/lib/loanClient";
 import { LoanStatus } from "@/lib/types";
@@ -97,6 +98,11 @@ export default function MyTransactionsPage() {
     const totalVol = current.reduce((acc, l) => acc + toNumber(l.totalAmount), 0);
     return { total, active, overdue, repaid, amountDue, totalVol };
   }, [current]);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [signingLoanId, setSigningLoanId] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return current.filter((l) => {
@@ -239,10 +245,21 @@ export default function MyTransactionsPage() {
                       <div className="text-xs text-slate-400">No agreement</div>
                     )}
                   </div>
-                  <div className="mt-4 flex items-center justify-end">
+                  <div className="mt-4 flex items-center justify-end gap-2">
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/dashboard/my-transactions/${l.id}`}>View</Link>
                     </Button>
+                    {/* Lender sign button for pending loans */}
+                    {view === "lender" && String(l.status).toUpperCase() === "PENDING" && !l.signedByLender && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={signing && signingLoanId === l.id}
+                        onClick={() => { setSigningLoanId(l.id); setConfirmOpen(true); }}
+                      >
+                        Sign & Offer Loan
+                      </Button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -250,6 +267,35 @@ export default function MyTransactionsPage() {
           )}
         </CardContent>
       </Card>
+      {/* Confirmation dialog for lender sign */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Sign & Offer Loan"
+        description="Are you sure you want to sign and offer this loan? This action cannot be undone."
+        confirmText={signing ? "Signing..." : "Yes, Sign & Offer"}
+        cancelText="Cancel"
+        onCancel={() => { setConfirmOpen(false); setSigningLoanId(null); setError(null); }}
+        onConfirm={async () => {
+          if (!signingLoanId) return;
+          setSigning(true);
+          setError(null);
+          try {
+            await loanClient.signByLender(signingLoanId);
+            setConfirmOpen(false);
+            setSigningLoanId(null);
+            // Optionally, refresh the list
+            setLoading(true);
+            const [b, l] = await Promise.all([loanClient.meBorrowed(), loanClient.meLent()]);
+            setBorrowed(b || []);
+            setLent(l || []);
+          } catch (e: any) {
+            setError(e?.message || "Failed to sign loan");
+          } finally {
+            setSigning(false);
+          }
+        }}
+      />
+      {error && <div className="text-red-600 text-sm text-center mt-2">{error}</div>}
     </div>
   );
 }

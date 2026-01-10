@@ -67,7 +67,7 @@ export default function OffersReceivedPage() {
     <div>
       <PageHeader title="Offers Received" subtitle="All offers for your loan requests" />
 
-      <div className="grid gap-4 md:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-3">
         <StatCard title="Total" value={stats.total} accent="blue" icon={<Handshake size={18} />} />
         <StatCard title="Accepted" value={stats.accepted} accent="green" icon={<CheckCircle2 size={18} />} />
         <StatCard title="Pending" value={stats.pending} accent="pink" icon={<Clock4 size={18} />} />

@@ -126,7 +126,7 @@ export default function MyRequestsPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-4">
         <StatCard title="Total" value={counts.total} accent="blue" />
         <StatCard title="Open" value={counts.open} accent="pink" />
         <StatCard title="Funded" value={counts.funded} accent="green" />

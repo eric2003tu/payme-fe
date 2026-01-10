@@ -11,10 +11,6 @@ const baseLinks = [
   { href: "/dashboard/loan-requests", label: "Loan Requests", icon: FileCheck },
   { href: "/dashboard/my-requests", label: "My Requests", icon: FileCheck },
   { href: "/dashboard/offer-received", label: "Offers Received", icon: Handshake },
-  { href: "/dashboard/my-transactions", label: "My Transactions", icon: Landmark },
-  { href: "/dashboard/lenders", label: "Lenders", icon: Users },
-  { href: "/dashboard/borrowers", label: "Borrowers", icon: Users },
-  { href: "/dashboard/borrowes", label: "Borrowes", icon: Users },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle2 },
 ];

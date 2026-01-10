@@ -82,4 +82,12 @@ export const loanClient = {
   async get(id: string): Promise<LoanDto> {
     return appClient.get<LoanDto>(`/loan/${encodeURIComponent(id)}`);
   },
+  /**
+   * Lender signs the loan, activating it and setting disbursement date
+   * @param id Loan ID
+   * @returns Updated LoanDto
+   */
+  async signByLender(id: string): Promise<LoanDto> {
+    return appClient.request<LoanDto>(`/loan/${encodeURIComponent(id)}/sign-by-lender`, { method: "PATCH" });
+  },
 };
