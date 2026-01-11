@@ -106,6 +106,8 @@ export default function MyTransactionsPage() {
   const [signingLoanId, setSigningLoanId] = useState<string | null>(null);
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // For payment proof document
+  const [paymentProofUrl, setPaymentProofUrl] = useState("");
 
   const filtered = useMemo(() => {
     return current.filter((l) => {
@@ -321,7 +323,12 @@ export default function MyTransactionsPage() {
                 : "Yes, I Have Paid")
         }
         cancelText="Cancel"
-        onCancel={() => { setConfirmOpen(false); setSigningLoanId(null); setError(null); }}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setSigningLoanId(null);
+          setError(null);
+          setPaymentProofUrl("");
+        }}
         onConfirm={async () => {
           if (!signingLoanId) return;
           setSigning(true);
@@ -337,10 +344,16 @@ export default function MyTransactionsPage() {
                 throw new Error("Action not allowed for this loan status.");
               }
             } else {
-              await loanClient.markPaidByBorrower(signingLoanId);
+              if (!paymentProofUrl) {
+                setError("Please provide a payment proof document URL.");
+                setSigning(false);
+                return;
+              }
+              await loanClient.markPaidByBorrower(signingLoanId, paymentProofUrl);
             }
             setConfirmOpen(false);
             setSigningLoanId(null);
+            setPaymentProofUrl("");
             // Optionally, refresh the list
             setLoading(true);
             const [b, l] = await Promise.all([loanClient.meBorrowed(), loanClient.meLent()]);
@@ -352,7 +365,22 @@ export default function MyTransactionsPage() {
             setSigning(false);
           }
         }}
-      />
+      >
+        {/* Show payment proof input for borrower marking as paid */}
+        {view === "borrower" && confirmOpen && (
+          <div className="mb-4">
+            <label htmlFor="payment-proof-url" className="block text-sm font-medium text-slate-700 mb-1">Payment Proof Document URL</label>
+            <Input
+              id="payment-proof-url"
+              type="url"
+              placeholder="https://example.com/payment-proof/receipt123.pdf"
+              value={paymentProofUrl}
+              onChange={e => setPaymentProofUrl(e.target.value)}
+              required
+            />
+          </div>
+        )}
+      </ConfirmDialog>
       {error && <div className="text-red-600 text-sm text-center mt-2">{error}</div>}
     </div>
   );

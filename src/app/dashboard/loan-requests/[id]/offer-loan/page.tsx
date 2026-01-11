@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { loanOfferClient } from "@/lib/loanOfferClient";
 import { toast } from "sonner";
+
+import { loanRequestClient, LoanRequestDto } from "@/lib/loanRequestClient";
 
 type CreateLoanOfferDto = {
   loanRequestId: string;
@@ -24,6 +26,19 @@ export default function OfferLoanForRequestPage() {
   const params = useParams();
   const router = useRouter();
   const loanRequestId = typeof params?.id === "string" ? (params.id as string) : "";
+
+  // Loan request details state (must be inside component to access loanRequestId)
+  const [requestDetails, setRequestDetails] = useState<LoanRequestDto | null>(null);
+  const [loadingRequest, setLoadingRequest] = useState(true);
+
+  useEffect(() => {
+    if (!loanRequestId) return;
+    setLoadingRequest(true);
+    loanRequestClient.get(loanRequestId)
+      .then(setRequestDetails)
+      .catch(() => setRequestDetails(null))
+      .finally(() => setLoadingRequest(false));
+  }, [loanRequestId]);
 
   const defaultValues = useMemo<Partial<CreateLoanOfferDto>>(
     () => ({ interestRate: 6.0, status: "PENDING", isCounterOffer: false }),
@@ -72,6 +87,35 @@ export default function OfferLoanForRequestPage() {
           </Button>
         }
       />
+
+      {/* Loan request details at the top */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Request Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingRequest ? (
+            <div className="text-slate-500">Loading request details...</div>
+          ) : requestDetails ? (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Amount:</span> {requestDetails.amount}
+              </div>
+              <div>
+                <span className="font-medium">Interest Rate:</span> {requestDetails.interestRate}%
+              </div>
+              <div>
+                <span className="font-medium">Duration:</span> {requestDetails.durationDays} days
+              </div>
+              <div>
+                <span className="font-medium">Purpose:</span> {requestDetails.purpose || "—"}
+              </div>
+            </div>
+          ) : (
+            <div className="text-red-500">Failed to load request details.</div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -104,7 +104,19 @@ export const loanClient = {
    * @param id Loan ID
    * @returns Updated LoanDto
    */
-  async markPaidByBorrower(id: string): Promise<LoanDto> {
-    return appClient.request<LoanDto>(`/loan/${encodeURIComponent(id)}/mark-paid-by-borrower`, { method: "PATCH" });
+  /**
+   * Borrower marks loan as paid (notifies lender for confirmation, requires payment proof document)
+   * @param id Loan ID
+   * @param paymentProofDocument URL string for payment proof
+   * @returns Updated LoanDto
+   */
+  async markPaidByBorrower(id: string, paymentProofDocument: string): Promise<LoanDto> {
+    return appClient.request<LoanDto>(
+      `/loan/${encodeURIComponent(id)}/mark-paid-by-borrower`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ paymentProofDocument }),
+      }
+    );
   },
 };
