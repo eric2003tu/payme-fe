@@ -122,8 +122,16 @@ export function DashboardHeader() {
           </Button>
           <Dropdown className="user-dropdown ml-1">
             <DropdownTrigger onClick={handleDropdown} className="flex items-center gap-2 rounded-full border bg-white px-3 py-1.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue to-pink text-white">
-                <User className="h-4 w-4" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue to-pink text-white overflow-hidden">
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt="Profile"
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
               </div>
               <div className="leading-tight">
                 <div className="text-xs font-medium text-slate-900">{user?.firstName} {user?.lastName}</div>

@@ -52,6 +52,9 @@ export function Navbar() {
     ? `${user.firstName[0]}${user.lastName[0]}`
     : user?.email?.[0]?.toUpperCase() || "U";
 
+  // Get user profile picture
+  const userProfilePic = user?.profilePicture || user?.avatarUrl || null;
+
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
@@ -174,9 +177,17 @@ export function Navbar() {
                       aria-label="Profile menu"
                     >
                       <div className="relative">
-                        <div className="h-9 w-9 lg:h-10 lg:w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-md group-hover:shadow-lg transition-shadow">
-                          {userInitials}
-                        </div>
+                        {userProfilePic ? (
+                          <img
+                            src={userProfilePic}
+                            alt="Profile"
+                            className="h-9 w-9 lg:h-10 lg:w-10 rounded-full object-cover shadow-md group-hover:shadow-lg transition-shadow"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 lg:h-10 lg:w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-md group-hover:shadow-lg transition-shadow">
+                            {userInitials}
+                          </div>
+                        )}
                         <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white"></div>
                       </div>
                       <div className="hidden lg:flex flex-col items-start">
@@ -198,9 +209,17 @@ export function Navbar() {
                         {/* User Info Header */}
                         <div className="px-4 py-3 border-b border-slate-100">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
-                              {userInitials}
-                            </div>
+                            {userProfilePic ? (
+                              <img
+                                src={userProfilePic}
+                                alt="Profile"
+                                className="h-12 w-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+                                {userInitials}
+                              </div>
+                            )}
                             <div className="flex-1">
                               <p className="font-semibold text-slate-900">
                                 {user?.firstName} {user?.lastName}
@@ -312,9 +331,17 @@ export function Navbar() {
 
               {isAuthenticated && user && (
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
-                    {userInitials}
-                  </div>
+                  {userProfilePic ? (
+                    <img
+                      src={userProfilePic}
+                      alt="Profile"
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+                      {userInitials}
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="font-semibold text-slate-900">
                       {user.firstName} {user.lastName}

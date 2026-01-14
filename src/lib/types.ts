@@ -126,6 +126,8 @@ export type UserDto = {
   role: UserRole | string;
   category?: string;
   trustScore?: number;
+  profilePicture?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type LoginResponse = {

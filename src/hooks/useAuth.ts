@@ -12,6 +12,8 @@ export interface AuthUser {
   lastName?: string;
   category?: string;
   trustScore?: number;
+  profilePicture?: string | null;
+  avatarUrl?: string | null;
 }
 
 function mapRole(apiRole?: string): Role {
@@ -27,6 +29,7 @@ export function useAuth() {
   useEffect(() => {
     const session = authClient.getSession();
     if (session?.user) {
+      // Set initial user from session
       setUser({
         id: session.user.id,
         email: session.user.email,
@@ -35,7 +38,19 @@ export function useAuth() {
         lastName: session.user.lastName,
         category: session.user.category,
         trustScore: session.user.trustScore,
+        profilePicture: session.user.profilePicture,
+        avatarUrl: session.user.avatarUrl,
       });
+      // Fetch latest profile from backend
+      authClient.profile().then((profile) => {
+        if (profile && profile.id) {
+          setUser((prev) => ({
+            ...prev,
+            ...profile,
+            role: mapRole(profile.role),
+          }));
+        }
+      }).catch(() => {});
     } else {
       setUser(null);
     }
