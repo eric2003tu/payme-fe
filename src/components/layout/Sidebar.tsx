@@ -11,8 +11,6 @@ const baseLinks = [
   { href: "/dashboard/loan-requests", label: "Loan Requests", icon: FileCheck },
   { href: "/dashboard/my-requests", label: "My Requests", icon: FileCheck },
   { href: "/dashboard/offer-received", label: "Offers Received", icon: Handshake },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/profile", label: "Profile", icon: UserCircle2 },
 ];
 
 const adminLinks = [
