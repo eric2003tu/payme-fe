@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/authClient";
 
@@ -9,6 +10,8 @@ export interface AuthUser {
   role: Role;
   firstName?: string;
   lastName?: string;
+  category?: string;
+  trustScore?: number;
 }
 
 function mapRole(apiRole?: string): Role {
@@ -30,6 +33,8 @@ export function useAuth() {
         role: mapRole(session.user.role),
         firstName: session.user.firstName,
         lastName: session.user.lastName,
+        category: session.user.category,
+        trustScore: session.user.trustScore,
       });
     } else {
       setUser(null);
@@ -39,5 +44,10 @@ export function useAuth() {
   const isAuthenticated = !!user;
   const isAdmin = user?.role === "admin";
 
-  return useMemo(() => ({ user, isAuthenticated, isAdmin }), [user, isAuthenticated, isAdmin]);
+  const logout = async () => {
+    await authClient.logout();
+    setUser(null);
+  };
+
+  return useMemo(() => ({ user, isAuthenticated, isAdmin, logout }), [user, isAuthenticated, isAdmin]);
 }

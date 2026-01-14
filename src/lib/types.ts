@@ -124,6 +124,8 @@ export type UserDto = {
   firstName?: string;
   lastName?: string;
   role: UserRole | string;
+  category?: string;
+  trustScore?: number;
 };
 
 export type LoginResponse = {
