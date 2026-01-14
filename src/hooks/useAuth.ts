@@ -1,5 +1,6 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import useSWR from "swr";
 import { authClient } from "@/lib/authClient";
 
 export type Role = "guest" | "user" | "admin";
@@ -24,13 +25,10 @@ function mapRole(apiRole?: string): Role {
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    const session = authClient.getSession();
-    if (session?.user) {
-      // Set initial user from session
-      setUser({
+  // Get initial user from session for instant fallback
+  const session = authClient.getSession();
+  const fallbackUser = session?.user
+    ? {
         id: session.user.id,
         email: session.user.email,
         role: mapRole(session.user.role),
@@ -40,28 +38,21 @@ export function useAuth() {
         trustScore: session.user.trustScore,
         profilePicture: session.user.profilePicture,
         avatarUrl: session.user.avatarUrl,
-      });
-      // Fetch latest profile from backend
-      authClient.profile().then((profile) => {
-        if (profile && profile.id) {
-          setUser((prev) => ({
-            ...prev,
-            ...profile,
-            role: mapRole(profile.role),
-          }));
-        }
-      }).catch(() => {});
-    } else {
-      setUser(null);
-    }
-  }, []);
+      }
+    : null;
+
+  // Use SWR for profile fetching and caching
+  const { data: user, mutate } = useSWR('auth/profile', authClient.profile, {
+    fallbackData: fallbackUser,
+    revalidateOnFocus: true,
+  });
 
   const isAuthenticated = !!user;
   const isAdmin = user?.role === "admin";
 
   const logout = async () => {
     await authClient.logout();
-    setUser(null);
+    mutate(null, false); // Clear user from cache
   };
 
   return useMemo(() => ({ user, isAuthenticated, isAdmin, logout }), [user, isAuthenticated, isAdmin]);
