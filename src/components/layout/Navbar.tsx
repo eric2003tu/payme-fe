@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { notificationsClient } from "@/lib/notificationsClient";
 import { useState, useEffect } from "react";
 import { 
   FaUser, 
@@ -23,6 +24,23 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: any;
+    const fetchUnread = async () => {
+      try {
+        const list = await notificationsClient.unread();
+        if (mounted) setUnreadCount(list?.length || 0);
+      } catch {
+        // ignore
+      }
+    };
+    fetchUnread();
+    timer = setInterval(fetchUnread, 60000);
+    return () => { mounted = false; if (timer) clearInterval(timer); };
+  }, []);
 
   // Format name as E.Tuyishime
   const formattedName = user?.firstName && user?.lastName
@@ -70,9 +88,7 @@ export function Navbar() {
 
   const profileMenuItems = [
     { href: "/dashboard/profile", label: "My Profile", icon: <FaUser className="w-4 h-4" /> },
-    { href: "/settings", label: "Settings", icon: <FaCog className="w-4 h-4" /> },
     { href: "/dashboard/notifications", label: "Notifications", icon: <FaBell className="w-4 h-4" /> },
-    { href: "/security", label: "Security", icon: <FaShieldAlt className="w-4 h-4" /> },
   ];
 
   return (
@@ -138,13 +154,17 @@ export function Navbar() {
               {isAuthenticated && user ? (
                 <>
                   {/* Notifications */}
-                  <button 
+                  <Link href="/dashboard/notifications"
                     className="p-2 lg:p-2.5 rounded-full hover:bg-slate-100 transition-colors relative"
                     aria-label="Notifications"
                   >
                     <FaBell className="w-5 h-5 text-slate-600" />
-                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
-                  </button>
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-medium text-white">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </Link>
 
                   {/* Profile Dropdown */}
                   <div className="relative profile-menu">

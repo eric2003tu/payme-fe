@@ -78,7 +78,8 @@ export function DashboardHeader() {
 
   return (
     <header className="sticky top-0 z-30 mb-6">
-      <div className="glass-card flex items-center justify-between gap-4 rounded-xl border px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="glass-card flex items-center justify-between gap-4 rounded-xl border px-2 py-2 md:px-4 md:py-3 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+
         {/* Breadcrumbs */}
         <nav className="hidden md:flex items-center text-sm text-slate-600">
           {crumbParts.map((seg, idx) => {
