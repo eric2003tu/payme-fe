@@ -28,7 +28,7 @@ export function Sidebar() {
     <aside className="glass-card sticky top-0 h-[100dvh] w-64 shrink-0 overflow-y-auto border-r px-3 py-4">
       <Link href="/" className="flex items-center gap-2 mb-6">
       <div className="mb-4 flex items-center gap-2 px-2">
-        <div className="h-8 w-8 rounded-md" style={{ background: "linear-gradient(135deg, var(--brand-blue), var(--brand-pink))" }}></div>
+        <img src='logo.png' className="h-20 w-20 "/>
         <span className="text-sm font-semibold">PayMeNow</span>
       </div>
       </Link>

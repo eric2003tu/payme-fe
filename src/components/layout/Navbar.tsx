@@ -6,10 +6,7 @@ export function Navbar() {
     <header className="border-b bg-background/80 backdrop-blur sticky top-0 z-50">
       <div className="container-fluid flex h-14 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div
-            className="h-7 w-7 rounded-md"
-            style={{ background: "linear-gradient(135deg, var(--brand-blue), var(--brand-pink))" }}
-          />
+        <img src="/logo.png" alt="PayMeNow Logo" className="h-20 w-20" />
           <span className="text-sm font-semibold">PayMeNow</span>
         </Link>
 

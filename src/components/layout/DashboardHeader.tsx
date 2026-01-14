@@ -55,6 +55,27 @@ export function DashboardHeader() {
 
   const crumbParts = parts[0] === "dashboard" ? parts : ["dashboard", ...parts];
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const handleDropdown = () => setDropdownOpen((v) => !v);
+  const handleLogout = () => {
+    // TODO: Add logout logic here
+    window.location.href = "/auth/login";
+  };
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".user-dropdown")) setDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [dropdownOpen]);
+
+  // Dropdown UI
+  const { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } = require("@/components/ui/dropdown");
+  const { User, Settings, LogOut } = require("lucide-react");
+
   return (
     <header className="sticky top-0 z-30 mb-6">
       <div className="glass-card flex items-center justify-between gap-4 rounded-xl border px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -98,15 +119,37 @@ export function DashboardHeader() {
               )}
             </Link>
           </Button>
-          <div className="ml-1 flex items-center gap-2 rounded-full border bg-white px-3 py-1.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue to-pink text-white">
-              <User className="h-4 w-4" />
-            </div>
-            <div className="leading-tight">
-              <div className="text-xs font-medium text-slate-900">{user?.firstName} {user?.lastName}</div>
-              <div className="text-[10px] text-slate-500">{user?.role}</div>
-            </div>
-          </div>
+          <Dropdown className="user-dropdown ml-1">
+            <DropdownTrigger onClick={handleDropdown} className="flex items-center gap-2 rounded-full border bg-white px-3 py-1.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue to-pink text-white">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="leading-tight">
+                <div className="text-xs font-medium text-slate-900">{user?.firstName} {user?.lastName}</div>
+                <div className="text-[10px] text-slate-500">{user?.role}</div>
+              </div>
+            </DropdownTrigger>
+            <DropdownMenu open={dropdownOpen}>
+              <DropdownItem onClick={() => window.location.href = "/dashboard/profile"}>
+                <span className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-500" />
+                  Profile
+                </span>
+              </DropdownItem>
+              <DropdownItem onClick={() => window.location.href = "/dashboard/settings"}>
+                <span className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-gray-500" />
+                  Settings
+                </span>
+              </DropdownItem>
+              <DropdownItem onClick={handleLogout} className="text-red-600">
+                <span className="flex items-center gap-2">
+                  <LogOut className="h-4 w-4 text-red-600" />
+                  Logout
+                </span>
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         </div>
       </div>
     </header>
