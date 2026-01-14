@@ -25,7 +25,11 @@ import {
   FaLock,
   FaGlobe,
   FaBuilding,
-  FaMapPin
+  FaMapPin,
+  FaStreetView,
+  FaCity,
+  FaFlag,
+  FaLocationArrow
 } from "react-icons/fa";
 import { authClient } from "@/lib/authClient";
 import { UserCategory } from "@/lib/types";
@@ -80,31 +84,12 @@ type UserProfileResponseDto = {
     villageId?: string;
     latitude?: number;
     longitude?: number;
-    country?: {
-      id: string;
-      name: string;
-      code: string;
-    };
-    province?: {
-      id: string;
-      name: string;
-    };
-    district?: {
-      id: string;
-      name: string;
-    };
-    sector?: {
-      id: string;
-      name: string;
-    };
-    cell?: {
-      id: string;
-      name: string;
-    };
-    village?: {
-      id: string;
-      name: string;
-    };
+    countryName?: string;
+    provinceName?: string;
+    districtName?: string;
+    sectorName?: string;
+    cellName?: string;
+    villageName?: string;
   };
   familyDetails?: {
     id: string;
@@ -238,6 +223,55 @@ const FamilyCardSkeleton = () => (
   </div>
 );
 
+// Address hierarchy component with icons and names
+const AddressHierarchy = ({ address }: { address: NonNullable<UserProfileResponseDto['address']> }) => {
+  const levels = [
+    { name: address.countryName, icon: FaGlobe, label: "Country" },
+    { name: address.provinceName, icon: FaFlag, label: "Province" },
+    { name: address.districtName, icon: FaCity, label: "District" },
+    { name: address.sectorName, icon: FaMapPin, label: "Sector" },
+    { name: address.cellName, icon: FaStreetView, label: "Cell" },
+    { name: address.villageName, icon: FaHome, label: "Village" },
+  ].filter(level => level.name);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {levels.map((level, index) => (
+          <div 
+            key={level.label} 
+            className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <level.icon className="text-sm text-slate-400" />
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">{level.label}</div>
+            </div>
+            <div className="text-sm font-semibold text-slate-900">{level.name}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Full Address Path */}
+      {levels.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <FaLocationArrow className="text-sm text-blue-500" />
+            <div className="text-xs font-medium text-slate-700 uppercase tracking-wide">Full Address Path</div>
+          </div>
+          <div className="text-sm text-slate-700">
+            {levels.map((level, index) => (
+              <span key={level.label}>
+                {level.name}
+                {index < levels.length - 1 && <span className="text-slate-400 mx-2">›</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfileResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,6 +317,15 @@ export default function ProfilePage() {
   const repaymentRate = useMemo(() => {
     if (!profile?.totalLoansTaken) return 100;
     return Math.round((profile.loansPaidOnTime / profile.totalLoansTaken) * 100);
+  }, [profile]);
+
+  const loanPerformance = useMemo(() => {
+    if (!profile?.totalLoansTaken) return { onTime: 0, late: 0, defaulted: 0 };
+    return {
+      onTime: Math.round((profile.loansPaidOnTime / profile.totalLoansTaken) * 100),
+      late: Math.round((profile.loansPaidLate / profile.totalLoansTaken) * 100),
+      defaulted: Math.round((profile.loansDefaulted / profile.totalLoansTaken) * 100),
+    };
   }, [profile]);
 
   if (loading && !profile) {
@@ -334,6 +377,7 @@ export default function ProfilePage() {
             value={profile?.trustScore ?? 0} 
             accent="blue"
             icon={<FaHistory className="text-blue-500" />}
+            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-75">
@@ -342,6 +386,7 @@ export default function ProfilePage() {
             value={money(profile?.walletBalance ?? 0)} 
             accent="blue"
             icon={<FaWallet className="text-blue-500" />}
+            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-100">
@@ -350,6 +395,7 @@ export default function ProfilePage() {
             value={`${repaymentRate}%`} 
             accent="green"
             icon={<FaCheckCircle className="text-green-500" />}
+            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-150">
@@ -358,6 +404,7 @@ export default function ProfilePage() {
             value={profile?.totalLoansTaken ?? 0} 
             accent="pink"
             icon={<FaMoneyBillWave className="text-pink-500" />}
+            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-200">
@@ -366,6 +413,7 @@ export default function ProfilePage() {
             value={money(profile?.currentDebt ?? 0)} 
             accent="orange"
             icon={<FaCreditCard className="text-orange-500" />}
+            // ...existing code...
           />
         </div>
       </div>
@@ -527,6 +575,28 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Loan Performance Summary */}
+            <div className="mt-6">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Loan Performance Summary</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-emerald-200 bg-gradient-to-b from-emerald-50 to-white p-4">
+                  <div className="text-xs font-medium text-emerald-700 uppercase tracking-wide mb-1">On Time</div>
+                  <div className="text-lg font-bold text-emerald-700">{loanPerformance.onTime}%</div>
+                  <div className="text-xs text-emerald-600 mt-1">{profile?.loansPaidOnTime || 0} loans</div>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-gradient-to-b from-amber-50 to-white p-4">
+                  <div className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Late</div>
+                  <div className="text-lg font-bold text-amber-700">{loanPerformance.late}%</div>
+                  <div className="text-xs text-amber-600 mt-1">{profile?.loansPaidLate || 0} loans</div>
+                </div>
+                <div className="rounded-lg border border-rose-200 bg-gradient-to-b from-rose-50 to-white p-4">
+                  <div className="text-xs font-medium text-rose-700 uppercase tracking-wide mb-1">Defaulted</div>
+                  <div className="text-lg font-bold text-rose-700">{loanPerformance.defaulted}%</div>
+                  <div className="text-xs text-rose-600 mt-1">{profile?.loansDefaulted || 0} loans</div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -583,7 +653,12 @@ export default function ProfilePage() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium text-sm text-slate-900">{h.reason.replace(/_/g, ' ')}</div>
+                      <div className="font-medium text-sm text-slate-900">
+                        {h.reason === 'LOAN_REPAID_ON_TIME' ? 'Loan Repaid on Time' :
+                         h.reason === 'LOAN_DEFAULTED' ? 'Loan Defaulted' :
+                         h.reason === 'LATE_REPAYMENT' ? 'Late Repayment' :
+                         h.reason.replace(/_/g, ' ')}
+                      </div>
                       <div className={`flex items-center gap-1 text-xs font-semibold ${h.change >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                         {h.change >= 0 ? <FaArrowUp className="text-xs" /> : <FaArrowDown className="text-xs" />}
                         {h.change >= 0 ? "+" : ""}{h.change}
@@ -591,6 +666,9 @@ export default function ProfilePage() {
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
                       {dateStr(h.createdAt as any)} · {h.oldScore} → {h.newScore}
+                      {h.loan && (
+                        <span className="block mt-0.5">Loan: {h.loan.loanNumber} ({money(h.loan.amount)})</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -599,6 +677,25 @@ export default function ProfilePage() {
                     No trust score changes yet
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Financial Summary</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-600">Total Borrowed</span>
+                  <span className="font-semibold text-slate-900">{money(profile?.totalBorrowed ?? 0)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-600">Total Repaid</span>
+                  <span className="font-semibold text-emerald-600">{money(profile?.totalRepaid ?? 0)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-600">Avg. Repayment Time</span>
+                  <span className="font-semibold text-slate-900">{profile?.avgRepaymentTime || 0} days</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -612,84 +709,105 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="rounded-lg bg-emerald-50 p-1.5">
-                <FaHome className="text-emerald-600" />
+                <FaMapMarkerAlt className="text-emerald-600" />
               </div>
               <div>
                 <div>Address Information</div>
-                <CardDescription>Your registered residential address</CardDescription>
+                <CardDescription>Your registered residential address with complete hierarchy</CardDescription>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {profile?.address ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Street Address */}
                 <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <FaMapMarkerAlt className="text-sm text-slate-400" />
+                    <FaStreetView className="text-sm text-slate-400" />
                     <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Street Address</div>
                   </div>
                   <div className="text-sm font-semibold text-slate-900">{profile.address.street}</div>
                 </div>
-                
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {profile.address.country && (
-                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FaGlobe className="text-sm text-slate-400" />
-                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Country</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900">{profile.address.country.name}</div>
-                    </div>
-                  )}
-                  
-                  {profile.address.province && (
-                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FaBuilding className="text-sm text-slate-400" />
-                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Province</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900">{profile.address.province.name}</div>
-                    </div>
-                  )}
-                  
-                  {profile.address.district && (
-                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FaMapPin className="text-sm text-slate-400" />
-                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">District</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900">{profile.address.district.name}</div>
-                    </div>
-                  )}
-                  
-                  {profile.address.sector && (
-                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FaMapPin className="text-sm text-slate-400" />
-                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sector</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900">{profile.address.sector.name}</div>
-                    </div>
-                  )}
+
+                {/* Address Hierarchy */}
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Address Hierarchy</h3>
+                  <AddressHierarchy address={profile.address} />
                 </div>
-                
-                {profile.address.latitude && profile.address.longitude && (
+
+                {/* Coordinates */}
+                {(profile.address.latitude && profile.address.longitude) && (
                   <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <FaMapMarkerAlt className="text-sm text-slate-400" />
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Coordinates</div>
+                      <FaLocationArrow className="text-sm text-slate-400" />
+                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Geographic Coordinates</div>
                     </div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      {profile.address.latitude.toFixed(4)}, {profile.address.longitude.toFixed(4)}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Latitude</div>
+                        <div className="text-sm font-semibold text-slate-900">{profile.address.latitude.toFixed(6)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Longitude</div>
+                        <div className="text-sm font-semibold text-slate-900">{profile.address.longitude.toFixed(6)}</div>
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Address IDs */}
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Address Identifiers</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                    {profile.address.countryId && (
+                      <div>
+                        <div className="text-slate-500">Country ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.countryId.slice(-8)}</div>
+                      </div>
+                    )}
+                    {profile.address.provinceId && (
+                      <div>
+                        <div className="text-slate-500">Province ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.provinceId.slice(-8)}</div>
+                      </div>
+                    )}
+                    {profile.address.districtId && (
+                      <div>
+                        <div className="text-slate-500">District ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.districtId.slice(-8)}</div>
+                      </div>
+                    )}
+                    {profile.address.sectorId && (
+                      <div>
+                        <div className="text-slate-500">Sector ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.sectorId.slice(-8)}</div>
+                      </div>
+                    )}
+                    {profile.address.cellId && (
+                      <div>
+                        <div className="text-slate-500">Cell ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.cellId.slice(-8)}</div>
+                      </div>
+                    )}
+                    {profile.address.villageId && (
+                      <div>
+                        <div className="text-slate-500">Village ID</div>
+                        <div className="font-mono text-slate-700 truncate">{profile.address.villageId.slice(-8)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8">
-                <FaHome className="text-4xl text-slate-300 mb-3" />
-                <div className="text-slate-500">No address information available</div>
-                <div className="text-sm text-slate-400 mt-1">Please update your profile to add address details</div>
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="relative">
+                  <FaMapMarkerAlt className="text-5xl text-slate-300 mb-4" />
+                  <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500"></div>
+                </div>
+                <div className="text-lg font-medium text-slate-500 mb-2">No Address Information</div>
+                <div className="text-sm text-slate-400 text-center max-w-md">
+                  Complete your address details to enhance your profile and enable location-based services
+                </div>
               </div>
             )}
           </CardContent>
@@ -710,70 +828,179 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             {profile?.familyDetails ? (
-              <div className="space-y-4">
-                {/* Emergency Contact */}
-                <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaPhone className="text-sm text-slate-400" />
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Emergency Contact</div>
+              <div className="space-y-6">
+                {/* Emergency Contact - Highlighted */}
+                <div className="rounded-lg border border-rose-200 bg-gradient-to-br from-rose-50/50 to-pink-50/50 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <FaPhone className="text-sm text-rose-500" />
+                      <div className="text-xs font-medium text-rose-700 uppercase tracking-wide">Emergency Contact</div>
+                    </div>
+                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                      Priority
+                    </span>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.emergencyContactName || "—"}</div>
-                    <div className="text-sm text-slate-600">{profile.familyDetails.emergencyContactPhone || "—"}</div>
+                    <div className="flex items-center gap-2">
+                      <FaPhone className="text-xs text-slate-400" />
+                      <span className="text-sm text-slate-600">{profile.familyDetails.emergencyContactPhone || "—"}</span>
+                    </div>
                     {profile.familyDetails.emergencyContactRelation && (
-                      <div className="text-xs text-slate-500">Relation: {profile.familyDetails.emergencyContactRelation}</div>
+                      <div className="flex items-center gap-2">
+                        <FaUserFriends className="text-xs text-slate-400" />
+                        <span className="text-xs text-slate-500">Relation: {profile.familyDetails.emergencyContactRelation}</span>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Parents */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FaUserFriends className="text-sm text-slate-400" />
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Father</div>
+                {/* Parents Section */}
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Parents Information</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FaUserFriends className="text-sm text-blue-400" />
+                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Father</div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.fatherName || "—"}</div>
+                        {/* Father phone removed: not in type */}
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.fatherName || "—"}</div>
-                  </div>
-                  
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FaUserFriends className="text-sm text-slate-400" />
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Mother</div>
+                    
+                    <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FaUserFriends className="text-sm text-pink-400" />
+                        <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Mother</div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.motherName || "—"}</div>
+                        {/* Mother phone removed: not in type */}
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.motherName || "—"}</div>
                   </div>
                 </div>
 
-                {/* Spouse */}
+                {/* Spouse Information */}
                 {profile.familyDetails.spouseName && (
-                  <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
+                  <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 p-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <FaUserFriends className="text-sm text-slate-400" />
-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Spouse</div>
+                      <FaUserFriends className="text-sm text-blue-500" />
+                      <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Spouse Information</div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.spouseName}</div>
-                      {profile.familyDetails.spousePhone && (
-                        <div className="text-sm text-slate-600">{profile.familyDetails.spousePhone}</div>
-                      )}
-                      {profile.familyDetails.spouseNationalId && (
-                        <div className="text-xs text-slate-500">ID: {profile.familyDetails.spouseNationalId}</div>
-                      )}
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">{profile.familyDetails.spouseName}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {profile.familyDetails.spousePhone && (
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">Phone</div>
+                            <div className="text-sm text-slate-700">{profile.familyDetails.spousePhone}</div>
+                          </div>
+                        )}
+                        {profile.familyDetails.spouseNationalId && (
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">National ID</div>
+                            <div className="text-sm text-slate-700">{profile.familyDetails.spouseNationalId}</div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Additional Family Details */}
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-700 uppercase tracking-wide">Additional Details</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Family ID</div>
+                      <div className="font-mono text-slate-700 truncate">{profile.familyDetails.id?.slice(-8)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Last Updated</div>
+                      {/* updatedAt removed: not in type */}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8">
-                <FaUserFriends className="text-4xl text-slate-300 mb-3" />
-                <div className="text-slate-500">No family information available</div>
-                <div className="text-sm text-slate-400 mt-1">Add family details for emergency contact purposes</div>
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="relative">
+                  <FaUserFriends className="text-5xl text-slate-300 mb-4" />
+                  <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-amber-500"></div>
+                </div>
+                <div className="text-lg font-medium text-slate-500 mb-2">No Family Information</div>
+                <div className="text-sm text-slate-400 text-center max-w-md">
+                  Add family and emergency contact details for important notifications and emergency situations
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Account Timeline */}
+      <Card className="transform transition-all duration-500 animate-in fade-in">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="rounded-lg bg-purple-50 p-1.5">
+              <FaHistory className="text-purple-600" />
+            </div>
+            <div>
+              <div>Account Timeline</div>
+              <CardDescription>Key milestones in your account history</CardDescription>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            {/* Timeline grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Created At */}
+              <div className="relative pl-12">
+                <div className="absolute left-2 top-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white shadow"></div>
+                <div className="text-sm font-semibold text-slate-900">Account Created</div>
+                <div className="text-sm text-slate-600 mt-1">{dateStr(profile?.createdAt)}</div>
+                <div className="text-xs text-slate-500 mt-1">Your journey with us began</div>
+              </div>
+
+              {/* Last Updated */}
+              <div className="relative pl-12">
+                <div className="absolute left-2 top-1 h-5 w-5 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                <div className="text-sm font-semibold text-slate-900">Last Profile Update</div>
+                <div className="text-sm text-slate-600 mt-1">{dateStr(profile?.updatedAt)}</div>
+                <div className="text-xs text-slate-500 mt-1">Most recent profile update</div>
+              </div>
+
+              {/* Last Login */}
+              {profile?.lastLoginAt && (
+                <div className="relative pl-12">
+                  <div className="absolute left-2 top-1 h-5 w-5 rounded-full bg-purple-500 border-2 border-white shadow"></div>
+                  <div className="text-sm font-semibold text-slate-900">Last Login</div>
+                  <div className="text-sm text-slate-600 mt-1">{dateStr(profile.lastLoginAt)}</div>
+                  <div className="text-xs text-slate-500 mt-1">Most recent account access</div>
+                </div>
+              )}
+
+              {/* Trust Score Milestone */}
+              <div className="relative pl-12">
+                <div className="absolute left-2 top-1 h-5 w-5 rounded-full bg-amber-500 border-2 border-white shadow"></div>
+                <div className="text-sm font-semibold text-slate-900">Trust Score Achievement</div>
+                <div className="text-sm text-slate-600 mt-1">Current: {profile?.trustScore || 0}/100</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {profile?.trustScore && profile.trustScore >= 90 ? "Excellent - Top tier reputation" :
+                   profile?.trustScore && profile.trustScore >= 70 ? "Great - Strong financial standing" :
+                   "Building - Continue positive behavior"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
