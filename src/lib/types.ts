@@ -117,6 +117,12 @@ export type LoginRequest = {
   email: string;
   password: string;
 };
+ export type ForgotRequest ={
+  email: string
+ }
+ export type ForgotResponse ={
+  otp: number;
+ }
 
 export type UserDto = {
   id: string;

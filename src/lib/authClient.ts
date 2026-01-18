@@ -1,6 +1,6 @@
 "use client";
 import { appClient, saveSession, loadSession } from "./appClient";
-import type { AuthSession, LoginRequest, LoginResponse, UserDto } from "./types";
+import { ForgotResponse, type AuthSession, type ForgotRequest, type LoginRequest, type LoginResponse, type UserDto } from "./types";
 
 export const authClient = {
   async login(credentials: LoginRequest): Promise<AuthSession> {
@@ -20,6 +20,10 @@ export const authClient = {
     return appClient.post<any>("/auth/register", payload, { showErrorToast: false });
   },
 
+  async forgot(payload: any): Promise<any>{
+  return appClient.post<any>("/auth/forgot-password", payload,{showErrorToast: false});
+  },
+
   logout() {
     saveSession(null);
     // Toast after logout
@@ -32,6 +36,10 @@ export const authClient = {
     return loadSession();
   },
   async profile(): Promise<any> {
+    const session = loadSession();
+    if (!session || !session.accessToken) {
+      return null;
+    }
     return appClient.get<any>("/auth/profile");
   },
 };
