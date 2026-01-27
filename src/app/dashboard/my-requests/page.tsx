@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { Users, FolderOpen, CheckCircle2, PieChart, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,14 +127,12 @@ export default function MyRequestsPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Total" value={counts.total} accent="blue" />
-        <StatCard title="Open" value={counts.open} accent="pink" />
-        <StatCard title="Funded" value={counts.funded} accent="green" />
-        <StatCard title="Partial" value={counts.partial} accent="orange" />
-        <StatCard title="Cancelled" value={counts.cancelled} accent="pink" />
-        <StatCard title="Expired" value={counts.expired} accent="blue" />
-        <StatCard title="Raised" value={money(counts.raised)} accent="blue" />
+      <div className="grid gap-4 md:grid-cols-5">
+        <StatCard title="Total" value={counts.total} accent="blue" icon={<Users size={22} />} />
+        <StatCard title="Open" value={counts.open} accent="pink" icon={<FolderOpen size={22} />} />
+        <StatCard title="Funded" value={counts.funded} accent="green" icon={<CheckCircle2 size={22} />} />
+        <StatCard title="Partial" value={counts.partial} accent="orange" icon={<PieChart size={22} />} />
+        <StatCard title="Raised" value={money(counts.raised)} accent="blue" icon={<DollarSign size={22} />} />
       </div>
 
       <Card className="mt-6">

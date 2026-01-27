@@ -2,11 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { FaListUl, FaClock, FaCheckCircle, FaTimesCircle, FaBan } from "react-icons/fa";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FaClock, FaCheckCircle, FaBan, FaTimesCircle } from "react-icons/fa";
+// import { FaClock, FaCheckCircle, FaBan, FaTimesCircle } from "react-icons/fa";
 import { loanOfferClient } from "@/lib/loanOfferClient";
 import type { LoanOfferDto } from "@/lib/loanOfferClient";
 import { toast } from "sonner";
@@ -93,11 +94,11 @@ export default function OffersListPage() {
       <PageHeader title="Offers" subtitle="Your loan offers across requests" />
 
       <div className="grid gap-4 md:grid-cols-5">
-        <StatCard title="Total" value={counts.total} accent="blue" />
-        <StatCard title="Pending" value={counts.pending} accent="orange" />
-        <StatCard title="Accepted" value={counts.accepted} accent="green" />
-        <StatCard title="Rejected" value={counts.rejected} accent="pink" />
-        <StatCard title="Withdrawn" value={counts.withdrawn} accent="blue" />
+        <StatCard title="Total" value={counts.total} accent="blue" icon={<FaListUl size={22} />} />
+        <StatCard title="Pending" value={counts.pending} accent="orange" icon={<FaClock size={22} />} />
+        <StatCard title="Accepted" value={counts.accepted} accent="green" icon={<FaCheckCircle size={22} />} />
+        <StatCard title="Rejected" value={counts.rejected} accent="pink" icon={<FaTimesCircle size={22} />} />
+        <StatCard title="Withdrawn" value={counts.withdrawn} accent="blue" icon={<FaBan size={22} />} />
       </div>
 
       <Card className="mt-6">

@@ -66,7 +66,7 @@ export function Sidebar() {
           {links.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
-              <Link href={href} key={href} className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${active ? "bg-slate-100 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-900"}`} onClick={() => setOpen(false)}>
+              <Link href={href} key={href} className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${active ? "bg-slate-300 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-900"}`} onClick={() => setOpen(false)}>
                 <Icon size={18} className="text-slate-600" />
                 <span>{label}</span>
               </Link>

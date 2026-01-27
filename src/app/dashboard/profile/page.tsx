@@ -160,7 +160,7 @@ function Badge({ ok, label }: { ok: boolean; label: string }) {
 
 // Loading Skeleton Components
 const StatCardSkeleton = () => (
-  <div className="h-24 animate-pulse rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+  <div className="h-24 animate-pulse shadow-lg rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-4">
     <div className="h-3 w-20 rounded bg-slate-200 mb-3"></div>
     <div className="h-8 w-28 rounded bg-slate-300"></div>
     <div className="mt-2 h-2 w-32 rounded bg-slate-200"></div>
@@ -168,7 +168,7 @@ const StatCardSkeleton = () => (
 );
 
 const ProfileCardSkeleton = () => (
-  <div className="animate-pulse space-y-6 rounded-xl border border-slate-200 bg-white p-6">
+  <div className="animate-pulse space-y-6 rounded-xl  shadow-lg bg-white p-6">
     <div className="flex items-center gap-4">
       <div className="h-14 w-14 rounded-full bg-slate-200"></div>
       <div className="space-y-2">
@@ -377,7 +377,6 @@ export default function ProfilePage() {
             value={profile?.trustScore ?? 0} 
             accent="blue"
             icon={<FaHistory className="text-blue-500" />}
-            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-75">
@@ -386,7 +385,7 @@ export default function ProfilePage() {
             value={money(profile?.walletBalance ?? 0)} 
             accent="blue"
             icon={<FaWallet className="text-blue-500" />}
-            // ...existing code...
+
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-100">
@@ -395,7 +394,6 @@ export default function ProfilePage() {
             value={`${repaymentRate}%`} 
             accent="green"
             icon={<FaCheckCircle className="text-green-500" />}
-            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-150">
@@ -404,7 +402,6 @@ export default function ProfilePage() {
             value={profile?.totalLoansTaken ?? 0} 
             accent="pink"
             icon={<FaMoneyBillWave className="text-pink-500" />}
-            // ...existing code...
           />
         </div>
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-200">
@@ -413,7 +410,6 @@ export default function ProfilePage() {
             value={money(profile?.currentDebt ?? 0)} 
             accent="orange"
             icon={<FaCreditCard className="text-orange-500" />}
-            // ...existing code...
           />
         </div>
       </div>

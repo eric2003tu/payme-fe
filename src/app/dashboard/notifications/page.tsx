@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { FaBell, FaInbox, FaVolumeMute } from "react-icons/fa";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { notificationsClient, type NotificationDto } from "@/lib/notificationsClient";
@@ -161,9 +162,9 @@ export default function NotificationsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard title="Unread" value={counts.unread} accent="orange" />
-        <StatCard title="Recent" value={counts.recent} accent="blue" />
-        <StatCard title="Muted" value={counts.muted} accent="green" />
+        <StatCard title="Unread" value={counts.unread} accent="orange" icon={<FaBell size={22} />} />
+        <StatCard title="Recent" value={counts.recent} accent="blue" icon={<FaInbox size={22} />} />
+        <StatCard title="Muted" value={counts.muted} accent="green" icon={<FaVolumeMute size={22} />} />
       </div>
 
       <Card className="mt-6">

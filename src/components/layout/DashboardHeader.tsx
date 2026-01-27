@@ -135,7 +135,7 @@ export function DashboardHeader() {
               </div>
               <div className="leading-tight">
                 <div className="text-xs font-medium text-slate-900">{user?.firstName} {user?.lastName}</div>
-                <div className="text-[10px] text-slate-500">{user?.role}</div>
+                <div className="text-[10px] text-slate-500">{`$${user?.role} ${user?.category}`}</div>
               </div>
             </DropdownTrigger>
             <DropdownMenu open={dropdownOpen}>

@@ -109,18 +109,14 @@ export default function DashboardOverviewPage() {
     <div>
       <PageHeader title="Overview" subtitle="Your lending activity at a glance" />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <StatCard title="Wallet" value={money(walletBalance)} icon={<DollarSign size={18} />} accent="blue" />
-        <StatCard title="Trust Score" value={trustScore} icon={<Users size={18} />} accent="pink" />
         <StatCard title="Offers (Pending)" value={`${offersPending}/${offersTotal}`} icon={<Handshake size={18} />} accent="green" />
         <StatCard title="Accepted Offers" value={offersAccepted} icon={<CheckCircle2 size={18} />} accent="green" />
-      </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-4">
         <StatCard title="Open Requests" value={reqOpen} icon={<HandCoins size={18} />} accent="orange" />
-        <StatCard title="Partially Funded" value={reqPartial} icon={<TrendingUp size={18} />} accent="blue" />
         <StatCard title="Active Loans" value={loansActive} icon={<TrendingUp size={18} />} accent="green" />
-        <StatCard title="Overdue Loans" value={loansOverdue} icon={<AlarmClock size={18} />} accent="orange" />
+
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
