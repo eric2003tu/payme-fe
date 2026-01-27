@@ -370,15 +370,7 @@ export default function ProfilePage() {
       />
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <div className="transform transition-all duration-300 hover:scale-[1.02]">
-          <StatCard 
-            title="Trust Score" 
-            value={profile?.trustScore ?? 0} 
-            accent="blue"
-            icon={<FaHistory className="text-blue-500" />}
-          />
-        </div>
+      <div className="grid gap-4 md:grid-cols-4">
         <div className="transform transition-all duration-300 hover:scale-[1.02] delay-75">
           <StatCard 
             title="Wallet Balance" 
